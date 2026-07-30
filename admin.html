@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>پنل مدیریت نوشته‌خانه</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial;background:#f5f5f9;color:#20202a}.top{background:#171725;color:white;padding:18px 7%;display:flex;justify-content:space-between}.wrap{max-width:1100px;margin:30px auto;padding:0 20px}.panel{background:white;border:1px solid #e5e5ec;border-radius:18px;padding:25px;margin-bottom:22px}input,textarea,select{width:100%;padding:12px;margin:7px 0 15px;border:1px solid #ddd;border-radius:10px;font:inherit}textarea{min-height:150px}button{border:0;border-radius:10px;padding:11px 18px;font:inherit;cursor:pointer;background:#5c42c7;color:#fff;margin-left:7px}.danger{background:#b52d3d}.muted{color:#777}.post{border-top:1px solid #eee;padding:15px 0}.actions{margin-top:8px}.login{max-width:430px;margin:90px auto}.hidden{display:none}.msg{padding:10px;background:#eeeafd;border-radius:10px;margin-bottom:15px}
+</style></head><body>
+<div class="top"><strong>نوشته‌خانه — پنل مدیریت</strong><span id="status">محلی</span></div>
+<div id="login" class="panel login"><h2>ورود مدیر</h2><p class="muted">رمز پیش‌فرض: 1234</p><input id="pass" type="password" placeholder="رمز عبور"><button onclick="login()">ورود</button><p id="loginMsg"></p></div>
+<div id="app" class="wrap hidden">
+<div class="panel"><h2 id="formTitle">افزودن مقاله</h2>
+<input id="title" placeholder="عنوان مقاله"><input id="category" placeholder="دسته‌بندی">
+<textarea id="body" placeholder="متن مقاله را بنویسید..."></textarea>
+<button onclick="savePost()">ذخیره مقاله</button><button onclick="resetForm()">لغو</button><p class="muted">اطلاعات این نسخه در مرورگر همین دستگاه با localStorage ذخیره می‌شود.</p></div>
+<div class="panel"><h2>مقالات</h2><div id="posts"></div></div>
+</div>
+<script>
+let editId=null;
+const key='neveshtekhane_posts';
+function login(){if(document.getElementById('pass').value==='1234'){document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');render()}else document.getElementById('loginMsg').textContent='رمز عبور نادرست است.'}
+function getPosts(){return JSON.parse(localStorage.getItem(key)||'[]')}
+function setPosts(p){localStorage.setItem(key,JSON.stringify(p))}
+function savePost(){const title=document.getElementById('title').value.trim(),category=document.getElementById('category').value.trim(),body=document.getElementById('body').value.trim();if(!title||!body)return alert('عنوان و متن مقاله را وارد کنید.');let p=getPosts();if(editId){p=p.map(x=>x.id===editId?{...x,title,category,body}:x)}else p.unshift({id:Date.now(),title,category,body});setPosts(p);resetForm();render()}
+function editPost(id){const x=getPosts().find(p=>p.id===id);editId=id;document.getElementById('title').value=x.title;document.getElementById('category').value=x.category;document.getElementById('body').value=x.body;document.getElementById('formTitle').textContent='ویرایش مقاله'}
+function deletePost(id){if(confirm('این مقاله حذف شود؟')){setPosts(getPosts().filter(x=>x.id!==id));render()}}
+function resetForm(){editId=null;document.getElementById('title').value='';document.getElementById('category').value='';document.getElementById('body').value='';document.getElementById('formTitle').textContent='افزودن مقاله'}
+function render(){const box=document.getElementById('posts'),p=getPosts();box.innerHTML=p.length?p.map(x=>`<div class="post"><b>${esc(x.title)}</b><div class="muted">${esc(x.category||'بدون دسته‌بندی')}</div><div>${esc(x.body).slice(0,180)}${x.body.length>180?'…':''}</div><div class="actions"><button onclick="editPost(${x.id})">ویرایش</button><button class="danger" onclick="deletePost(${x.id})">حذف</button></div></div>`).join(''):'هنوز مقاله‌ای اضافه نشده است.'}
+function esc(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+</script></body></html>
