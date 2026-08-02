@@ -1,1 +1,71 @@
+name: Publish Post
 
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: "عنوان مطلب"
+        required: true
+        type: string
+
+      category:
+        description: "دسته‌بندی"
+        required: true
+        type: string
+
+      content:
+        description: "متن مطلب"
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: دریافت فایل‌های سایت
+        uses: actions/checkout@v4
+
+      - name: ساخت فایل مطلب
+        run: |
+          mkdir -p posts
+
+          cat > "posts/post-${{ github.run_number }}.html" <<'EOF'
+          <!doctype html>
+          <html lang="fa" dir="rtl">
+          <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>${{ inputs.title }}</title>
+          </head>
+
+          <body>
+
+          <main>
+
+          <small>${{ inputs.category }}</small>
+
+          <h1>${{ inputs.title }}</h1>
+
+          <p>
+          ${{ inputs.content }}
+          </p>
+
+          </main>
+
+          </body>
+          </html>
+          EOF
+
+      - name: ذخیره مطلب در GitHub
+        run: |
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add posts/
+
+          git commit -m "Publish new post"
+
+          git push
