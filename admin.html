@@ -1,30 +1,630 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
+
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>پنل مدیریت نوشته‌خانه</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>پنل مدیریت | نوشته‌خانه</title>
+
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial;background:#f5f5f9;color:#20202a}.top{background:#171725;color:white;padding:18px 7%;display:flex;justify-content:space-between}.wrap{max-width:1100px;margin:30px auto;padding:0 20px}.panel{background:white;border:1px solid #e5e5ec;border-radius:18px;padding:25px;margin-bottom:22px}input,textarea,select{width:100%;padding:12px;margin:7px 0 15px;border:1px solid #ddd;border-radius:10px;font:inherit}textarea{min-height:150px}button{border:0;border-radius:10px;padding:11px 18px;font:inherit;cursor:pointer;background:#5c42c7;color:#fff;margin-left:7px}.danger{background:#b52d3d}.muted{color:#777}.post{border-top:1px solid #eee;padding:15px 0}.actions{margin-top:8px}.login{max-width:430px;margin:90px auto}.hidden{display:none}.msg{padding:10px;background:#eeeafd;border-radius:10px;margin-bottom:15px}
-</style></head><body>
-<div class="top"><strong>نوشته‌خانه — پنل مدیریت</strong><span id="status">محلی</span></div>
-<div id="login" class="panel login"><h2>ورود مدیر</h2><p class="muted">رمز پیش‌فرض: 1234</p><input id="pass" type="password" placeholder="رمز عبور"><button onclick="login()">ورود</button><p id="loginMsg"></p></div>
-<div id="app" class="wrap hidden">
-<div class="panel"><h2 id="formTitle">افزودن مقاله</h2>
-<input id="title" placeholder="عنوان مقاله"><input id="category" placeholder="دسته‌بندی">
-<textarea id="body" placeholder="متن مقاله را بنویسید..."></textarea>
-<button onclick="savePost()">ذخیره مقاله</button><button onclick="resetForm()">لغو</button><p class="muted">اطلاعات این نسخه در مرورگر همین دستگاه با localStorage ذخیره می‌شود.</p></div>
-<div class="panel"><h2>مقالات</h2><div id="posts"></div></div>
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:Tahoma,Arial,sans-serif;
+  background:#f4f5f8;
+  color:#20202a;
+}
+
+/* ===== Header ===== */
+
+header{
+  background:#171725;
+  color:white;
+  padding:18px 6%;
+  box-shadow:0 4px 18px #0002;
+}
+
+.header-inner{
+  max-width:1100px;
+  margin:auto;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.logo{
+  font-size:21px;
+  font-weight:bold;
+}
+
+.status{
+  font-size:13px;
+  color:#8df0b0;
+}
+
+/* ===== Main ===== */
+
+main{
+  max-width:1100px;
+  margin:40px auto;
+  padding:0 20px;
+}
+
+.page-title{
+  margin-bottom:25px;
+}
+
+.page-title h1{
+  margin:0;
+  font-size:32px;
+}
+
+.page-title p{
+  color:#777;
+}
+
+/* ===== Dashboard ===== */
+
+.dashboard{
+  display:grid;
+  grid-template-columns:1fr 320px;
+  gap:22px;
+}
+
+/* ===== Editor ===== */
+
+.editor,
+.sidebar-card{
+  background:white;
+  border:1px solid #e5e5ec;
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 7px 25px #00000008;
+}
+
+.editor h2,
+.sidebar-card h2{
+  margin-top:0;
+}
+
+/* ===== Inputs ===== */
+
+label{
+  display:block;
+  margin:15px 0 7px;
+  font-weight:bold;
+  font-size:14px;
+}
+
+input,
+select,
+textarea{
+  width:100%;
+  padding:13px;
+  border:1px solid #dcdde5;
+  border-radius:10px;
+  font-family:Tahoma,Arial,sans-serif;
+  font-size:14px;
+  outline:none;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+  border-color:#5c42c7;
+}
+
+textarea{
+  min-height:300px;
+  resize:vertical;
+}
+
+/* ===== Buttons ===== */
+
+.buttons{
+  display:flex;
+  gap:10px;
+  margin-top:20px;
+  flex-wrap:wrap;
+}
+
+button{
+  border:0;
+  border-radius:10px;
+  padding:12px 20px;
+  cursor:pointer;
+  font-family:Tahoma,Arial,sans-serif;
+  font-size:14px;
+}
+
+.publish{
+  background:#171725;
+  color:white;
+}
+
+.preview{
+  background:#eeeafd;
+  color:#5c42c7;
+}
+
+.clear{
+  background:#f0f0f3;
+  color:#555;
+}
+
+button:hover{
+  opacity:.85;
+}
+
+/* ===== Sidebar ===== */
+
+.sidebar-card{
+  height:max-content;
+}
+
+.info-row{
+  display:flex;
+  justify-content:space-between;
+  border-bottom:1px solid #eee;
+  padding:12px 0;
+  font-size:14px;
+}
+
+.info-row:last-child{
+  border-bottom:0;
+}
+
+.green{
+  color:#159447;
+}
+
+/* ===== Preview ===== */
+
+#preview{
+  display:none;
+  margin-top:25px;
+  background:#fafafd;
+  border:1px solid #e4e4ec;
+  border-radius:15px;
+  padding:25px;
+}
+
+.preview-tag{
+  display:inline-block;
+  background:#eeeafd;
+  color:#5c42c7;
+  border-radius:99px;
+  padding:3px 10px;
+  font-size:13px;
+}
+
+.preview-title{
+  font-size:28px;
+  margin:15px 0 10px;
+}
+
+.preview-content{
+  color:#555;
+  white-space:pre-wrap;
+}
+
+/* ===== Message ===== */
+
+#message{
+  display:none;
+  margin-top:20px;
+  padding:13px;
+  border-radius:10px;
+  background:#e8f8ee;
+  color:#13783a;
+}
+
+/* ===== Mobile ===== */
+
+@media(max-width:800px){
+
+  .dashboard{
+    grid-template-columns:1fr;
+  }
+
+  .header-inner{
+    gap:10px;
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .page-title h1{
+    font-size:27px;
+  }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+<div class="header-inner">
+
+<div class="logo">
+نوشته‌خانه / پنل مدیریت
 </div>
+
+<div class="status">
+● سیستم آماده است
+</div>
+
+</div>
+
+</header>
+
+
+<main>
+
+<div class="page-title">
+
+<h1>
+مدیریت مطالب
+</h1>
+
+<p>
+از این قسمت می‌توانی نوشته‌های وبلاگ را آماده و مدیریت کنی.
+</p>
+
+</div>
+
+
+<div class="dashboard">
+
+
+<!-- ===== Editor ===== -->
+
+<section class="editor">
+
+<h2>
+نوشتن مطلب جدید
+</h2>
+
+
+<label for="title">
+عنوان مطلب
+</label>
+
+<input
+id="title"
+type="text"
+placeholder="مثلاً: چطور بهتر یاد بگیریم؟"
+>
+
+
+<label for="category">
+دسته‌بندی
+</label>
+
+<select id="category">
+
+<option value="تکنولوژی">
+تکنولوژی
+</option>
+
+<option value="زندگی">
+زندگی
+</option>
+
+<option value="تجربه">
+تجربه
+</option>
+
+<option value="آموزش">
+آموزش
+</option>
+
+<option value="عمومی">
+عمومی
+</option>
+
+</select>
+
+
+<label for="content">
+متن مطلب
+</label>
+
+<textarea
+id="content"
+placeholder="مطلب خودت را اینجا بنویس..."
+></textarea>
+
+
+<div class="buttons">
+
+<button
+class="publish"
+onclick="publishPost()"
+>
+انتشار مطلب
+</button>
+
+<button
+class="preview"
+onclick="showPreview()"
+>
+پیش‌نمایش
+</button>
+
+<button
+class="clear"
+onclick="clearEditor()"
+>
+پاک کردن
+</button>
+
+</div>
+
+
+<div id="message">
+مطلب با موفقیت آماده شد.
+</div>
+
+
+<!-- ===== Preview ===== -->
+
+<div id="preview">
+
+<span
+class="preview-tag"
+id="previewCategory"
+>
+دسته‌بندی
+</span>
+
+<h2
+class="preview-title"
+id="previewTitle"
+>
+عنوان مطلب
+</h2>
+
+<div
+class="preview-content"
+id="previewContent"
+>
+متن مطلب اینجا نمایش داده می‌شود.
+</div>
+
+</div>
+
+</section>
+
+
+<!-- ===== Sidebar ===== -->
+
+<aside>
+
+<div class="sidebar-card">
+
+<h2>
+وضعیت پنل
+</h2>
+
+
+<div class="info-row">
+
+<span>
+وضعیت
+</span>
+
+<strong class="green">
+فعال
+</strong>
+
+</div>
+
+
+<div class="info-row">
+
+<span>
+نسخه
+</span>
+
+<strong>
+1.01
+</strong>
+
+</div>
+
+
+<div class="info-row">
+
+<span>
+مدیر
+</span>
+
+<strong>
+بهراد فرزین‌پور
+</strong>
+
+</div>
+
+
+<div class="info-row">
+
+<span>
+پلتفرم
+</span>
+
+<strong>
+GitHub Pages
+</strong>
+
+</div>
+
+
+</div>
+
+
+<div
+class="sidebar-card"
+style="margin-top:20px"
+>
+
+<h2>
+نکته
+</h2>
+
+<p style="color:#666;font-size:14px">
+
+قبل از انتشار، نوشته را با گزینه
+<strong>پیش‌نمایش</strong>
+بررسی کن.
+
+</p>
+
+<p style="color:#666;font-size:14px">
+
+در مرحله بعد، سیستم انتشار را به GitHub متصل می‌کنیم تا مطالب منتشرشده در سایت اصلی نمایش داده شوند.
+
+</p>
+
+</div>
+
+</aside>
+
+</div>
+
+</main>
+
+
 <script>
-let editId=null;
-const key='neveshtekhane_posts';
-function login(){if(document.getElementById('pass').value==='1234'){document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');render()}else document.getElementById('loginMsg').textContent='رمز عبور نادرست است.'}
-function getPosts(){return JSON.parse(localStorage.getItem(key)||'[]')}
-function setPosts(p){localStorage.setItem(key,JSON.stringify(p))}
-function savePost(){const title=document.getElementById('title').value.trim(),category=document.getElementById('category').value.trim(),body=document.getElementById('body').value.trim();if(!title||!body)return alert('عنوان و متن مقاله را وارد کنید.');let p=getPosts();if(editId){p=p.map(x=>x.id===editId?{...x,title,category,body}:x)}else p.unshift({id:Date.now(),title,category,body});setPosts(p);resetForm();render()}
-function editPost(id){const x=getPosts().find(p=>p.id===id);editId=id;document.getElementById('title').value=x.title;document.getElementById('category').value=x.category;document.getElementById('body').value=x.body;document.getElementById('formTitle').textContent='ویرایش مقاله'}
-function deletePost(id){if(confirm('این مقاله حذف شود؟')){setPosts(getPosts().filter(x=>x.id!==id));render()}}
-function resetForm(){editId=null;document.getElementById('title').value='';document.getElementById('category').value='';document.getElementById('body').value='';document.getElementById('formTitle').textContent='افزودن مقاله'}
-function render(){const box=document.getElementById('posts'),p=getPosts();box.innerHTML=p.length?p.map(x=>`<div class="post"><b>${esc(x.title)}</b><div class="muted">${esc(x.category||'بدون دسته‌بندی')}</div><div>${esc(x.body).slice(0,180)}${x.body.length>180?'…':''}</div><div class="actions"><button onclick="editPost(${x.id})">ویرایش</button><button class="danger" onclick="deletePost(${x.id})">حذف</button></div></div>`).join(''):'هنوز مقاله‌ای اضافه نشده است.'}
-function esc(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-</script></body></html>
+
+/* ===== Preview ===== */
+
+function showPreview(){
+
+  const title =
+    document.getElementById("title").value.trim();
+
+  const category =
+    document.getElementById("category").value;
+
+  const content =
+    document.getElementById("content").value.trim();
+
+
+  if(!title || !content){
+
+    alert("لطفاً عنوان و متن مطلب را وارد کن.");
+
+    return;
+
+  }
+
+
+  document.getElementById("previewTitle")
+    .textContent = title;
+
+  document.getElementById("previewCategory")
+    .textContent = category;
+
+  document.getElementById("previewContent")
+    .textContent = content;
+
+
+  document.getElementById("preview")
+    .style.display = "block";
+
+}
+
+
+/* ===== Clear ===== */
+
+function clearEditor(){
+
+  document.getElementById("title").value = "";
+
+  document.getElementById("content").value = "";
+
+  document.getElementById("category").value =
+    "تکنولوژی";
+
+  document.getElementById("preview")
+    .style.display = "none";
+
+  document.getElementById("message")
+    .style.display = "none";
+
+}
+
+
+/* ===== Publish ===== */
+
+function publishPost(){
+
+  const title =
+    document.getElementById("title").value.trim();
+
+  const content =
+    document.getElementById("content").value.trim();
+
+  const category =
+    document.getElementById("category").value;
+
+
+  if(!title || !content){
+
+    alert("عنوان و متن مطلب را وارد کن.");
+
+    return;
+
+  }
+
+
+  /*
+    فعلاً انتشار واقعی به GitHub
+    در این مرحله فعال نشده است.
+
+    در مرحله بعد:
+    عنوان + دسته‌بندی + متن
+    به سیستم انتشار متصل می‌شوند.
+  */
+
+
+  const post = {
+
+    title:title,
+
+    category:category,
+
+    content:content,
+
+    date:new Date().toLocaleDateString("fa-IR")
+
+  };
+
+
+  localStorage.setItem(
+    "draftPost",
+    JSON.stringify(post)
+  );
+
+
+  document.getElementById("message")
+    .textContent =
+    "مطلب فعلاً ذخیره شد. اتصال انتشار واقعی در مرحله بعد انجام می‌شود.";
+
+  document.getElementById("message")
+    .style.display = "block";
+
+}
+
+</script>
+
+</body>
+</html>
