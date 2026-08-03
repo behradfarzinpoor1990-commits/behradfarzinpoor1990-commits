@@ -3,6 +3,7 @@ name: Publish Post
 on:
   workflow_dispatch:
     inputs:
+
       title:
         description: "عنوان مطلب"
         required: true
@@ -22,44 +23,208 @@ permissions:
   contents: write
 
 jobs:
+
   publish:
+
     runs-on: ubuntu-latest
 
     steps:
+
       - name: دریافت فایل‌های سایت
         uses: actions/checkout@v4
 
-      - name: ساخت مطلب
+      - name: ساخت پوشه مطالب
+        run: |
+          mkdir -p posts
+
+      - name: ساخت مطلب جدید
         env:
           POST_TITLE: ${{ inputs.title }}
           POST_CATEGORY: ${{ inputs.category }}
           POST_CONTENT: ${{ inputs.content }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
-          mkdir -p posts
 
-          cat > "posts/post-${{ github.run_number }}.html" <<EOF
+          cat > "posts/post-${RUN_NUMBER}.html" <<EOF
           <!doctype html>
           <html lang="fa" dir="rtl">
+
           <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width,initial-scale=1">
-            <title>${POST_TITLE}</title>
+
+          <meta charset="utf-8">
+
+          <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+          <title>${POST_TITLE}</title>
+
+          <style>
+
+          body{
+            margin:0;
+            padding:40px 20px;
+            background:#f6f6fa;
+            color:#20202a;
+            font-family:Tahoma,Arial,sans-serif;
+            line-height:2;
+          }
+
+          main{
+            max-width:850px;
+            margin:auto;
+            background:white;
+            padding:35px;
+            border-radius:20px;
+            box-shadow:0 6px 25px #00000010;
+          }
+
+          .category{
+            display:inline-block;
+            background:#eeeafd;
+            color:#5c42c7;
+            padding:4px 12px;
+            border-radius:99px;
+            font-size:13px;
+          }
+
+          h1{
+            font-size:34px;
+          }
+
+          .back{
+            display:inline-block;
+            margin-top:30px;
+            color:#5c42c7;
+            text-decoration:none;
+            font-weight:bold;
+          }
+
+          </style>
+
           </head>
+
           <body>
-            <main>
-              <small>${POST_CATEGORY}</small>
-              <h1>${POST_TITLE}</h1>
-              <p>${POST_CONTENT}</p>
-            </main>
+
+          <main>
+
+          <span class="category">
+          ${POST_CATEGORY}
+          </span>
+
+          <h1>
+          ${POST_TITLE}
+          </h1>
+
+          <p>
+          ${POST_CONTENT}
+          </p>
+
+          <a class="back" href="../index.html#posts">
+          ← بازگشت به مطالب
+          </a>
+
+          </main>
+
           </body>
+
           </html>
           EOF
 
-      - name: ذخیره در GitHub
+      - name: ساخت فهرست مطالب
+        env:
+          POST_TITLE: ${{ inputs.title }}
+          POST_CATEGORY: ${{ inputs.category }}
+          POST_CONTENT: ${{ inputs.content }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add posts/
+          node <<'NODE'
+
+          const fs = require("fs");
+
+          const title = process.env.POST_TITLE;
+          const category = process.env.POST_CATEGORY;
+          const content = process.env.POST_CONTENT;
+          const runNumber = process.env.RUN_NUMBER;
+
+          const now = new Date();
+
+          const date =
+            now.toISOString().slice(0,10);
+
+          let posts = [];
+
+          if(fs.existsSync("posts.json")){
+
+            try{
+
+              posts =
+                JSON.parse(
+                  fs.readFileSync(
+                    "posts.json",
+                    "utf8"
+                  )
+                );
+
+            }catch(error){
+
+              posts = [];
+
+            }
+
+          }
+
+          posts.push({
+
+            id: runNumber,
+
+            title: title,
+
+            category: category,
+
+            content: content,
+
+            excerpt:
+              content.length > 140
+              ? content.substring(0,140) + "..."
+              : content,
+
+            date: date,
+
+            url:
+              "posts/post-" +
+              runNumber +
+              ".html"
+
+          });
+
+          fs.writeFileSync(
+
+            "posts.json",
+
+            JSON.stringify(
+              posts,
+              null,
+              2
+            ),
+
+            "utf8"
+
+          );
+
+          NODE
+
+      - name: ثبت تغییرات در GitHub
+        run: |
+
+          git config user.name "github-actions[bot]"
+
+          git config user.email \
+          "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add posts posts.json
+
+          git diff --cached --quiet || \
           git commit -m "Publish new post"
+
           git push
