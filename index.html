@@ -116,14 +116,6 @@ header{
   box-shadow:0 6px 20px #00000008;
 }
 
-.tag{
-  color:#5c42c7;
-  background:#eeeafd;
-  border-radius:99px;
-  padding:3px 10px;
-  font-size:13px;
-}
-
 .card h2{
   font-size:20px;
 }
@@ -136,6 +128,35 @@ header{
   color:#5c42c7;
   text-decoration:none;
   font-weight:bold;
+}
+
+.read:hover{
+  text-decoration:underline;
+}
+
+.tag{
+  color:#5c42c7;
+  background:#eeeafd;
+  border-radius:99px;
+  padding:3px 10px;
+  font-size:13px;
+}
+
+/* ===== Dynamic Posts ===== */
+
+#dynamicPosts{
+  display:contents;
+}
+
+.dynamic-post{
+  position:relative;
+}
+
+.post-date{
+  display:block;
+  color:#999;
+  font-size:12px;
+  margin-top:8px;
 }
 
 /* ===== About ===== */
@@ -195,6 +216,12 @@ textarea{
   border-radius:10px;
   font-family:Tahoma,Arial,sans-serif;
   font-size:14px;
+}
+
+input:focus,
+textarea:focus{
+  outline:none;
+  border-color:#5c42c7;
 }
 
 textarea{
@@ -392,6 +419,16 @@ footer{
 
 
 <div class="grid">
+
+<!--
+  مطالب جدیدی که از پنل مدیریت منتشر شوند
+  به صورت خودکار در این قسمت قرار می‌گیرند.
+-->
+
+<div id="dynamicPosts"></div>
+
+
+<!-- ===== مطالب فعلی سایت ===== -->
 
 <article class="card">
 
@@ -678,6 +715,160 @@ window.addEventListener(
 
 
 showPage();
+
+</script>
+
+
+<!-- ===== Automatic Posts System ===== -->
+
+<script>
+
+async function loadPublishedPosts(){
+
+  const container =
+    document.getElementById("dynamicPosts");
+
+  if(!container){
+    return;
+  }
+
+  try{
+
+    const response =
+      await fetch(
+        "posts.json?cache=" + Date.now()
+      );
+
+    if(!response.ok){
+
+      console.log(
+        "posts.json هنوز ساخته نشده است."
+      );
+
+      return;
+
+    }
+
+    const posts =
+      await response.json();
+
+    if(
+      !Array.isArray(posts) ||
+      posts.length === 0
+    ){
+
+      return;
+
+    }
+
+
+    posts
+      .slice()
+      .reverse()
+      .forEach(post => {
+
+        const article =
+          document.createElement("article");
+
+        article.className =
+          "card dynamic-post";
+
+
+        /* دسته‌بندی */
+
+        const tag =
+          document.createElement("span");
+
+        tag.className =
+          "tag";
+
+        tag.textContent =
+          post.category || "عمومی";
+
+
+        /* عنوان */
+
+        const title =
+          document.createElement("h2");
+
+        title.textContent =
+          post.title || "بدون عنوان";
+
+
+        /* خلاصه */
+
+        const description =
+          document.createElement("p");
+
+        description.textContent =
+          post.excerpt ||
+          post.content ||
+          "این مطلب توضیحی ندارد.";
+
+
+        /* تاریخ */
+
+        if(post.date){
+
+          const date =
+            document.createElement("small");
+
+          date.className =
+            "post-date";
+
+          date.textContent =
+            "انتشار: " + post.date;
+
+          article.appendChild(date);
+
+        }
+
+
+        /* لینک */
+
+        const link =
+          document.createElement("a");
+
+        link.className =
+          "read";
+
+        link.href =
+          post.url || "#";
+
+        link.textContent =
+          "ادامه مطلب ←";
+
+
+        article.appendChild(tag);
+
+        article.appendChild(title);
+
+        article.appendChild(description);
+
+        article.appendChild(link);
+
+
+        container.appendChild(article);
+
+      });
+
+  }
+
+  catch(error){
+
+    console.log(
+      "خطا در بارگذاری مطالب:",
+      error
+    );
+
+  }
+
+}
+
+
+/* اجرای سیستم */
+
+loadPublishedPosts();
 
 </script>
 
