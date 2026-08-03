@@ -18,54 +18,48 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: دریافت فایل‌های سایت
         uses: actions/checkout@v4
 
-      - name: ساخت فایل مطلب
+      - name: ساخت مطلب
+        env:
+          POST_TITLE: ${{ inputs.title }}
+          POST_CATEGORY: ${{ inputs.category }}
+          POST_CONTENT: ${{ inputs.content }}
         run: |
           mkdir -p posts
 
-          cat > "posts/post-${{ github.run_number }}.html" <<'EOF'
+          cat > "posts/post-${{ github.run_number }}.html" <<EOF
           <!doctype html>
           <html lang="fa" dir="rtl">
           <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width,initial-scale=1">
-          <title>${{ inputs.title }}</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>${POST_TITLE}</title>
           </head>
-
           <body>
-
-          <main>
-
-          <small>${{ inputs.category }}</small>
-
-          <h1>${{ inputs.title }}</h1>
-
-          <p>
-          ${{ inputs.content }}
-          </p>
-
-          </main>
-
+            <main>
+              <small>${POST_CATEGORY}</small>
+              <h1>${POST_TITLE}</h1>
+              <p>${POST_CONTENT}</p>
+            </main>
           </body>
           </html>
           EOF
 
-      - name: ذخیره مطلب در GitHub
+      - name: ذخیره در GitHub
         run: |
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add posts/
-
           git commit -m "Publish new post"
-
           git push
